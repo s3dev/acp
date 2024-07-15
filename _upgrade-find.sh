@@ -1,25 +1,22 @@
 #!/usr/bin/env bash
 #-------------------------------------------------------------------------
-# Script:   update-find
-# Desc:     This script contains the functionality for acp's update/find
+# Script:   upgrade-find
+# Desc:     This script contains the functionality for acp's upgrade/find
 #           routine.
 #
-#           This script wraps the 'apt update' command, which is used to
-#           collect and store the URIs required for downloading the 
-#           contents for the /var/lib/apt/lists directory; triggered by
-#           an apt update.
+#           This script wraps the 'apt upgrade' command, which is used to
+#           collect and store the URIs from which the latest packages can
+#           be downloaded.
 #
 #           Next steps:
-#           Use the --update --get PATH arguments to download the files
-#           from the listed URIs, followed by the --update --install 
-#           arguments to move the downloaded files into each target 
-#           host's /var/lib/apt/lists directory.
+#           Use the --upgrade --get PATH arguments to download the latest
+#           package from the listed URIs and checksum the downloaded 
+#           files.
 #
-# Usage:    $ acp --update --find
+# Usage:    $ acp --upgrade --find
 #
 # Updates:
-# 11-07-24  J. Berendt  Written. Logic based on the cstmgt-update-collect
-#                       script.
+# 16-07-24  J. Berendt  Written.
 #-------------------------------------------------------------------------
 
 # Read config file and supporting functionality.
@@ -28,7 +25,7 @@ _dir="$( dirname "$( realpath "$0" )" )"
 . "$_dir/utils.sh"
 
 # Constants
-_DIR_UPDATES="/tmp/updates"
+_DIR_UPGRADES="/tmp/upgrades"
 
 #
 # Archive the .sig files from the staging area to the user's desktop as
@@ -38,10 +35,10 @@ _DIR_UPDATES="/tmp/updates"
 #         archive from the staging area to the user's desktop.
 #
 function archive() {
-    local _fname="$_DIR_UPDATES/update_$( date +%Y%m%d%H%M%S ).tar"
+    local _fname="$_DIR_UPGRADES/upgrade_$( date +%Y%m%d%H%M%S ).tar"
     local _excode=
     printf "Archiving the *.sig files ...\n"
-    pushd $_DIR_UPDATES > /dev/null  # Hack tar to get the desired directory structure.
+    pushd $_DIR_UPGRADES > /dev/null  # Hack tar to get the desired directory structure.
     tar -cvf "$_fname" *.sig
     popd > /dev/null
     mv "$_fname" "$HOME/Desktop"
@@ -55,11 +52,14 @@ function archive() {
 #
 # Create a .sig file, for each hostname listed in the .config file.
 #
+# Each .sig file contains the URI from which the latest package can be
+# downloaded, and the expected MD5 checksum for the file.
+#
 # @return Returns 0 always, to enable archiving.
 #
 function create_sig() {
     for host in ${HOSTS[@]}; do
-        printf "Collecting update for %s ...\n" $host
+        printf "Collecting upgrade information %s ...\n" $host
         runcmd $host
         [ $? -eq 0 ] && printf "Complete.\n\n"
     done
@@ -75,16 +75,16 @@ function epilog() {
 cat << EOF
 
 Next steps:
-    Copy the appropriate update_*.tar file, from the location mentioned
+    Copy the appropriate upgrade_*.tar file, from the location mentioned
     above, to the online system and run:
         
-        $ acp --update --get path/to/update_<datetime>.tar
+        $ acp --upgrade --get path/to/upgrade_<datetime>.tar
 
 EOF
 }
 
 #
-# SSH into the node and run the apt update --print-uris command and store
+# SSH into the node and run the apt upgrade --print-uris command and store
 # into a .sig file. Once complete, the .sig file is SCP'd back to the 
 # localhost.
 #
@@ -95,14 +95,14 @@ EOF
 #
 function runcmd() {
     local _node="$1"
-    local _fpath="/tmp/update-${_node,,}.sig"
-    local _cmd="apt update --print-uris 2> /dev/null | grep http | tr -d \' > $_fpath"
+    local _fpath="/tmp/upgrade-${_node,,}.sig"
+    local _cmd="apt upgrade --print-uris 2> /dev/null | grep http | tr -d \' > $_fpath"
     if is_alive $_node; then
         ssh -t $UID_OFFLINE@$_node "$_cmd"
         if [ $? -eq 0 ]; then
-            scp $UID_OFFLINE@$_node:"$_fpath" "$_DIR_UPDATES"
+            scp $UID_OFFLINE@$_node:"$_fpath" "$_DIR_UPGRADES"
         else
-            printf "${RED}An error occurred while running the update command for %s.{$RST}\n\n" $_node
+            printf "${RED}An error occurred while running the upgrade command for %s.{$RST}\n\n" $_node
             return 1
         fi
     else
@@ -119,10 +119,10 @@ function runcmd() {
 #
 function setup() {
     echo
-    # Create the /tmp/updates directory, if it does not exist.
-    [ ! -d $_DIR_UPDATES ] && mkdir $_DIR_UPDATES
-    printf "Removing any old .sig files in %s ...\n" $_DIR_UPDATES
-    rm $_DIR_UPDATES/*.sig > /dev/null 2>&1
+    # Create the /tmp/upgrades directory, if it does not exist.
+    [ ! -d $_DIR_UPGRADES ] && mkdir $_DIR_UPGRADES
+    printf "Removing any old .sig files in %s ...\n" $_DIR_UPGRADES
+    rm $_DIR_UPGRADES/*.sig &> /dev/null
     printf "Done.\n\n"
     return 0
 }
