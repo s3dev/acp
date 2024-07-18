@@ -71,16 +71,15 @@ function install() {
     local _base=
     local _fname=
     local _host=
-    printf "Installing the package metadata files ...\n"
     for f in $_DIR_UPDATES/*.tar; do
         _base=$( basename "$f" )  # \
         _fname="${_base%%.*}"     #  --- Get the hostname from the filename.
         _host="${_fname##*-}"     # /
-        printf " - for: %s\n" ${_host^^}
+        printf "\nInstalling package metadata files for: %s\n" ${_host^^}
         scp "$f" $UID_OFFLINE@$_host:/tmp &> /dev/null
         ssh -t $UID_OFFLINE@$_host "pushd $_DIR_LISTS > /dev/null;" \
                                    "sudo rm -f ./* &> /dev/null;" \
-                                   "sudo tar -xf $f -C $_DIR_LISTS --strip-components 3;" \
+                                   "sudo tar -xf /tmp/$_base -C $_DIR_LISTS --strip-components 3;" \
                                    "sudo xz -d *.xz &> /dev/null;" \
                                    "sudo rm *.xz &> /dev/null;" \
                                    "popd > /dev/null"
@@ -110,6 +109,7 @@ function setup() {
 # @return Returns the exit code from the tar command.
 #
 function unpack() {
+    printf "Unpacking the updates ...\n\n"
     tar -xf "$_INPATH" -C $_DIR_UPDATES
     return $?
 }

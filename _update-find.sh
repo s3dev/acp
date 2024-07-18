@@ -96,7 +96,7 @@ EOF
 function runcmd() {
     local _node="$1"
     local _fpath="/tmp/update-${_node,,}.sig"
-    local _cmd="apt update --print-uris 2> /dev/null | grep http | tr -d \' > $_fpath"
+    local _cmd="apt update --print-uris 2> /dev/null | grep ^\'http | tr -d \' > $_fpath"
     if is_alive $_node; then
         ssh -t $UID_OFFLINE@$_node "$_cmd"
         if [ $? -eq 0 ]; then

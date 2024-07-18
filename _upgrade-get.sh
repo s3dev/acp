@@ -134,11 +134,16 @@ function pack() {
 # downloaded, using the URI(s) in the .sig file.
 #
 function process_sig_files() {
-    printf "Processing the .sig files ...\n"
     for f in $_DIR_UPGRADES/*.sig; do
-        download "$f"
-        pack "$f"  # No error check as packing needs to occur, even if the
-                   # last download fails.
+        printf "\nDownloading the updates for: %s\n" $( basename $f )
+        sleep 2
+        if [ -s $f ]; then
+            download "$f"
+            pack "$f"  # No error check as packing needs to occur, even if the
+                       # last download fails.
+        else
+            printf "   - Empty file.\n"
+        fi
     done
     return $?
 }

@@ -59,7 +59,7 @@ function archive() {
 #
 function create_sig() {
     for host in ${HOSTS[@]}; do
-        printf "Collecting upgrade information %s ...\n" $host
+        printf "Collecting upgrade information for: %s\n" $host
         runcmd $host
         [ $? -eq 0 ] && printf "Complete.\n\n"
     done
@@ -96,9 +96,10 @@ EOF
 function runcmd() {
     local _node="$1"
     local _fpath="/tmp/upgrade-${_node,,}.sig"
-    local _cmd="apt upgrade --print-uris 2> /dev/null | grep http | tr -d \' > $_fpath"
+    local _cmd1="apt upgrade --print-uris 2> /dev/null | grep ^\'http | tr -d \' > $_fpath"
+    local _cmd2="apt install -f --print-uris 2> /dev/null | grep ^\'http | tr -d \' >> $_fpath"
     if is_alive $_node; then
-        ssh -t $UID_OFFLINE@$_node "$_cmd"
+        ssh -t $UID_OFFLINE@$_node "$_cmd1; $_cmd2"
         if [ $? -eq 0 ]; then
             scp $UID_OFFLINE@$_node:"$_fpath" "$_DIR_UPGRADES"
         else

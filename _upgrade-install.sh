@@ -54,18 +54,18 @@ function install() {
     local _base=
     local _fname=
     local _host=
-    printf "Installing updates ...\n"
     for f in $_DIR_UPGRADES/*.tar; do
         _base=$( basename "$f" )  # \
         _fname="${_base%%.*}"     #  --- Get the hostname from the filename.
         _host="${_fname##*-}"     # /
-        printf " - for: %s\n" ${_host^^}
+        printf "\nInstalling updates for: %s\n" ${_host^^}
+        sleep 2
         scp "$f" $UID_OFFLINE@$_host:/tmp &> /dev/null
         # This runs dpkg -i twice to catch dependency issues.
         ssh -t $UID_OFFLINE@$_host "pushd /tmp > /dev/null;" \
                                    "[ ! -d $_DIR_INSTALL ] && mkdir -p $_DIR_INSTALL;" \
                                    "rm -f $_DIR_INSTALL/* &> /dev/null;" \
-                                   "sudo tar -xf $f -C $_DIR_INSTALL;" \
+                                   "sudo tar -xf /tmp/$_base -C $_DIR_INSTALL;" \
                                    "sudo dpkg -i $_DIR_INSTALL/*.deb;" \
                                    "sudo dpkg -i $_DIR_INSTALL/*.deb;" \
                                    "popd > /dev/null;" \
