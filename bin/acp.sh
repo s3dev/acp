@@ -42,11 +42,16 @@
 # 12-07-24  J. Berendt  Written. Based (in principal) on the apt-offline 
 #                       program, which is now sparsely maintained and
 #                       fiddly to work with.
+# 18-07-24  J. Berendt  Minor updates to address deployed post-development
+#                       testing on Natalya.
+# 19-07-24  J. Berendt  Restructured the project (into ppk style) for easy
+#                       deployment and update.
 #-------------------------------------------------------------------------
 
 # Set current directory.
 _dir="$( dirname "$( realpath "$0" )" )"
-. "$_dir/.version"
+_dir_lib="$_dir/../lib"
+. "$_dir_lib/.version"
 
 # Initialise arguments.
 arg_find=0
@@ -95,12 +100,12 @@ function argparser() {
 #
 function router() {
     # The if/elif structure is used to preserve the child script's exit code.
-    if [[ $(($arg_update + $arg_find)) -eq 2 ]]; then       "$_dir/_update-find.sh"
-    elif [[ $(($arg_update + $arg_get)) -eq 2 ]]; then      "$_dir/_update-get.sh" "$arg_get_file"
-    elif [[ $(($arg_update + $arg_install)) -eq 2 ]]; then  "$_dir/_update-install.sh" "$arg_install_file"
-    elif [[ $(($arg_upgrade + $arg_find)) -eq 2 ]]; then    "$_dir/_upgrade-find.sh"
-    elif [[ $(($arg_upgrade + $arg_get)) -eq 2 ]]; then     "$_dir/_upgrade-get.sh" "$arg_get_file"
-    elif [[ $(($arg_upgrade + $arg_install)) -eq 2 ]]; then "$_dir/_upgrade-install.sh" "$arg_install_file"
+    if   [[ $(($arg_update + $arg_find)) -eq 2 ]]; then     "$_dir_lib/_update-find.sh"
+    elif [[ $(($arg_update + $arg_get)) -eq 2 ]]; then      "$_dir_lib/_update-get.sh" "$arg_get_file"
+    elif [[ $(($arg_update + $arg_install)) -eq 2 ]]; then  "$_dir_lib/_update-install.sh" "$arg_install_file"
+    elif [[ $(($arg_upgrade + $arg_find)) -eq 2 ]]; then    "$_dir_lib/_upgrade-find.sh"
+    elif [[ $(($arg_upgrade + $arg_get)) -eq 2 ]]; then     "$_dir_lib/_upgrade-get.sh" "$arg_get_file"
+    elif [[ $(($arg_upgrade + $arg_install)) -eq 2 ]]; then "$_dir_lib/_upgrade-install.sh" "$arg_install_file"
     fi
 }
 
@@ -143,43 +148,20 @@ Task arguments:
                     packages for upgrade. This task must be performed on
                     an ** internet connected  ** PC.
                     This argument requires a PATH to the target .tar 
-                    archive containing the package metadata to be 
-                    retrieved.
+                    archive containing the .sig files for each target 
+                    node.
     -i, --install   Third task for each routine.
                     Install the downloaded package metadata files 
                     (for the --update routine), or install the downloaded
                     updates (for the --upgrade routine).
                     This argument requires a PATH to the target .tar 
-                    archive containing the package metadata to be 
-                    installed.
+                    archive containing the package metadata or package 
+                    updates to be installed.
 
 Examples:
 
-    The first series of steps is to update the local apt repository/database,
-    and is carried out using the '--update' argument, as follows:
-
-    1) *Find* the URLs where the package metadata can be obtained:
-        $ acp --update --find
-
-    2) *Get* (download) the package metadata from the internet:
-        $ acp --update --get PATH
-
-    3) *Install* the latest package metadata files:
-        $ acp --update --install PATH
-
-    The second step is to download the relevant updates and install
-    then on the offline environment and is carried out using the 
-    '--upgrade' argument, as follows:
-
-    4) *Find* the packages which need to be updated, using the
-        latest package metadata downloaded in step 2:
-        $ acp --upgrade --find
-
-    5) *Get* (download) the latest package(s) from the internet:
-        $ acp --upgrade --get PATH
-
-    6) *Install* the latest updates:
-        $ acp --upgrade --install PATH
+    For detailed usage examples, please refer to the README.md file in
+    project's installation directory. (Find using: $ which acp)
 
 acp v${VERSION}
 
